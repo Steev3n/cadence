@@ -12,6 +12,7 @@ dependencies = [
     "ortools>=9.15.6755",
     "psycopg[binary]>=3.3.7",
     "pydantic-settings>=2.16.2",
+    "pyjwt[crypto]>=2.15.1",
     "sqlalchemy>=2.1.8",
 ]
 

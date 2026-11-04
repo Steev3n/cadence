@@ -6,6 +6,8 @@ from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 class Settings(BaseSettings):
     database_url: str
+    supabase_url: str
+    supabase_jwt_alg: str = "ES256"
 
     model_config = SettingsConfigDict(
         env_file=".env",
