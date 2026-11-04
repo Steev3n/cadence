@@ -15,3 +15,11 @@ dependencies with `cd frontend && npm install`. uv installs backend dependencies
 automatically.
 
 To run just one server, use `make dev-frontend` or `make dev-backend`.
+
+## Migrations
+Used to version DB with Alembic.
+Following a change in a model, run:
+``` bash
+uv run alembic revision --autogenerate -m "commit message"
+uv run alembic upgrade head
+```
