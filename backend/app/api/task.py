@@ -1,0 +1,20 @@
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, status
+from sqlalchemy.orm import Session
+
+from app.auth import CurrentUserId
+from app.db import get_db
+from app.schemas.task import TaskCreate, TaskRead
+from app.services.task import create_task
+
+router = APIRouter(prefix="/tasks", tags=["tasks"])
+
+
+@router.post("", response_model=TaskRead, status_code=status.HTTP_201_CREATED)
+def post_task(
+    data: TaskCreate,
+    user_id: CurrentUserId,
+    db: Annotated[Session, Depends(get_db)],
+):
+    return create_task(db=db, user_id=user_id, data=data)

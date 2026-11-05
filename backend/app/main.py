@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.auth import CurrentUserId
 
+from app.api.task import router as tasks_router
+
 app = FastAPI(title="cadence")
 app.add_middleware(
     CORSMiddleware,
@@ -9,7 +11,7 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
-
+app.include_router(tasks_router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
