@@ -111,6 +111,20 @@ function TaskList() {
     return () => controller.abort();
   }, []);
 
+  async function deleteTask(taskId: string) {
+      const response = await apiFetch(`/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error("Unable to delete task.");
+      }
+
+      setTasks((current) =>
+        current.filter((task) => task.id !== taskId)
+      );
+    }
+
   return (
     <section aria-labelledby="tasks-heading" className="space-y-3 border-t border-slate-200 pt-4">
       <h2 id="tasks-heading" className="text-lg font-semibold">Your tasks</h2>
@@ -131,6 +145,10 @@ function TaskList() {
               <p className="mt-1 text-sm text-slate-600">
                 {statusLabels[task.status]} · <span className="capitalize">{task.priority}</span> priority
               </p>
+              <button type="button" onClick={() => deleteTask(task.id)} disabled={loading}
+              className="text-sm text-red-600 hover:text-red-800">
+                Delete
+              </button>
             </li>
           ))}
         </ul>
