@@ -23,3 +23,14 @@ def create_task(
         raise
 
     return task
+
+def list_tasks(
+    db: Session,
+    user_id: UUID,
+) -> list[Task]:
+    return (
+        db.query(Task)
+        .filter(Task.user_id == user_id)
+        .order_by(Task.created_at.desc(), Task.id.desc())
+        .all()
+    )
