@@ -17,6 +17,32 @@ class TaskCreate(BaseModel):
             raise ValueError("Title must be a string")
         return v.strip()
 
+class TaskUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    status: TaskStatus | None = None
+    priority: TaskPriority | None = None
+    due_at: AwareDatetime | None = None
+    estimated_minutes: int | None = Field(default=None, gt=0)
+    remaining_minutes: int | None = Field(default=None, ge=0)
+
+    @field_validator("title", "status", "priority", mode="before")
+    @classmethod
+    def reject_null(cls, value):
+        # Omitted fields are allowed; these database columns cannot be cleared.
+        if value is None:
+            raise ValueError("This field cannot be null")
+        return value
+
+    @field_validator("title", mode="before")
+    @classmethod
+    def trim_title(cls, value):
+        if not isinstance(value, str):
+            raise ValueError("Title must be a string")
+        return value.strip()
+
+
 class TaskRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
