@@ -89,25 +89,40 @@ function TaskRow({ task, onUpdated, onDeleted }: {
 }) {
   const [pending, setPending] = useState<"update" | "delete" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
 
-  async function updateStatus(status: Task["status"]) {
-    if (pending || status === task.status) return;
+  async function updateTask(changes: Partial<Pick<Task, "title" | "priority" | "status">>) {
+    if (pending) return false;
     setPending("update");
     setError(null);
     try {
       const response = await apiFetch(`/tasks/${task.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(changes),
       });
       if (!response.ok) throw new Error("Unable to update task. Please try again.");
       const updated: Task = await response.json();
       onUpdated(updated);
+      return true;
     } catch (error) {
       setError(error instanceof Error ? error.message : "Unable to update task.");
+      return false;
     } finally {
       setPending(null);
     }
+  }
+
+  async function saveEdits(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const fields = new FormData(event.currentTarget);
+    const title = String(fields.get("title") ?? "").trim();
+    if (!title) {
+      setError("Enter a task title.");
+      return;
+    }
+    const priority = fields.get("priority") as Task["priority"];
+    if (await updateTask({ title, priority })) setEditing(false);
   }
 
   async function deleteTask() {
@@ -132,12 +147,40 @@ function TaskRow({ task, onUpdated, onDeleted }: {
         {task.title}
       </p>
       <p className="text-sm text-slate-600"><span className="capitalize">{task.priority}</span> priority</p>
+      {editing ? (
+        <form onSubmit={saveEdits} className="space-y-2" aria-label={`Edit ${task.title}`}>
+          <label htmlFor={`title-${task.id}`} className="block text-sm font-medium">Task title</label>
+          <input id={`title-${task.id}`} name="title" defaultValue={task.title}
+            required maxLength={255} disabled={pending !== null}
+            className="w-full rounded-lg border border-slate-300 px-3 py-2" />
+          <label htmlFor={`priority-${task.id}`} className="block text-sm font-medium">Priority</label>
+          <select id={`priority-${task.id}`} name="priority" defaultValue={task.priority}
+            disabled={pending !== null} className="w-full rounded-lg border border-slate-300 px-3 py-2">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+          <div className="flex gap-3">
+            <button type="submit" disabled={pending !== null}
+              className="rounded-lg bg-slate-900 px-3 py-2 text-sm text-white disabled:opacity-50">
+              {pending === "update" ? "Saving…" : "Save changes"}
+            </button>
+            <button type="button" disabled={pending !== null}
+              onClick={() => { setEditing(false); setError(null); }}
+              className="text-sm text-slate-600 disabled:opacity-50">Cancel</button>
+          </div>
+        </form>
+      ) : (
+        <button type="button" disabled={pending !== null}
+          onClick={() => { setEditing(true); setError(null); }}
+          className="text-sm text-slate-700 underline disabled:opacity-50">Edit</button>
+      )}
       <label htmlFor={`status-${task.id}`} className="block text-sm font-medium">Status</label>
       <select
         id={`status-${task.id}`}
         value={task.status}
-        disabled={pending !== null}
-        onChange={(event) => void updateStatus(event.target.value as Task["status"])}
+        disabled={pending !== null || editing}
+        onChange={(event) => void updateTask({ status: event.target.value as Task["status"] })}
         className="w-full rounded-lg border border-slate-300 px-3 py-2 disabled:opacity-50"
       >
         <option value="todo">{statusLabels.todo}</option>
@@ -145,7 +188,7 @@ function TaskRow({ task, onUpdated, onDeleted }: {
         <option value="done">{statusLabels.done}</option>
       </select>
       {pending === "update" && <p role="status" className="text-sm text-slate-600">Saving…</p>}
-      <button type="button" onClick={() => void deleteTask()} disabled={pending !== null}
+      <button type="button" onClick={() => void deleteTask()} disabled={pending !== null || editing}
         className="text-sm text-red-600 hover:text-red-800 disabled:opacity-50">
         {pending === "delete" ? "Deleting…" : "Delete"}
       </button>
